@@ -1,0 +1,52 @@
+{
+  "manifest_version": 3,
+  "name": "Viggo AI Support",
+  "version": "1.0.0",
+  "description": "Consulta inteligente à base de conhecimento da Viggo direto no Movidesk",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png"
+    },
+    "default_title": "Viggo AI Support"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.movidesk.com/*",
+        "http://localhost/*",
+        "https://localhost/*"
+      ],
+      "js": ["content.js"],
+      "css": ["sidebar.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": [
+    "storage",
+    "contextMenus",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://*.movidesk.com/*",
+    "http://localhost:3001/*",
+    "https://*/"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["sidebar.html", "icons/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

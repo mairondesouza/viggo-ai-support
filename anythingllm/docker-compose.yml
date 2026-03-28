@@ -1,0 +1,41 @@
+version: "3.9"
+
+# ============================================================
+# AnythingLLM — Self-hosted AI para suporte Viggo
+# ============================================================
+# Como usar:
+#   docker compose up -d
+#   Acesse: http://localhost:3001
+# ============================================================
+
+services:
+  anythingllm:
+    image: mintplexlabs/anythingllm:latest
+    container_name: viggo-anythingllm
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - STORAGE_DIR=/app/server/storage
+      - JWT_SECRET=viggo-ai-support-secret-mude-em-producao
+      - DISABLE_TELEMETRY=true
+      # LLM padrão (configure depois no painel)
+      # Para usar OpenAI: descomente e preencha
+      # - LLM_PROVIDER=openai
+      # - OPEN_AI_KEY=sk-...
+      # - OPEN_MODEL_PREF=gpt-4o-mini
+      #
+      # Para usar sem custo (Ollama local):
+      # - LLM_PROVIDER=ollama
+      # - OLLAMA_BASE_PATH=http://ollama:11434
+    volumes:
+      - anythingllm_storage:/app/server/storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  anythingllm_storage:
+    driver: local

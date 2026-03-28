@@ -1,0 +1,9 @@
+{
+  "name": "viggo-ai-support-extension",
+  "version": "1.0.0",
+  "description": "Plugin Chrome para consulta à base de conhecimento Viggo AI no Movidesk",
+  "scripts": {
+    "build": "bash build.sh",
+    "icons": "python3 generate_icons.py dist/icons"
+  }
+}

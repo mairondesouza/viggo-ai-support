@@ -1,0 +1,477 @@
+/* ============================================================
+   Viggo AI Support — Estilos do Painel Lateral
+   ============================================================ */
+
+/* Botão flutuante (FAB) */
+#viggo-ai-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 2147483647;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 22px;
+  line-height: 1;
+}
+
+#viggo-ai-fab:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.55);
+}
+
+#viggo-ai-fab.viggo-ai-fab-ativo {
+  background: linear-gradient(135deg, #4f46e5, #3730a3);
+}
+
+#viggo-ai-fab-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ef4444;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+  font-family: sans-serif;
+}
+
+/* Painel principal */
+#viggo-ai-painel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 380px;
+  height: 100vh;
+  background: #ffffff;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+  z-index: 2147483646;
+  display: flex;
+  flex-direction: column;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  color: #1e1b4b;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#viggo-ai-painel.viggo-ai-fechado {
+  transform: translateX(100%);
+}
+
+#viggo-ai-painel.viggo-ai-aberto {
+  transform: translateX(0);
+}
+
+/* Header */
+.viggo-ai-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: white;
+  flex-shrink: 0;
+}
+
+.viggo-ai-header-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.viggo-ai-logo {
+  font-size: 20px;
+}
+
+.viggo-ai-badge {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.viggo-ai-header-acoes {
+  display: flex;
+  gap: 4px;
+}
+
+.viggo-ai-btn-icon {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.viggo-ai-btn-icon:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.viggo-ai-btn-fechar {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+/* Corpo */
+.viggo-ai-corpo {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Busca */
+.viggo-ai-busca {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#viggo-ai-input {
+  width: 100%;
+  border: 1.5px solid #e0e7ff;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  color: #1e1b4b;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+  line-height: 1.5;
+}
+
+#viggo-ai-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+#viggo-ai-input::placeholder {
+  color: #a5b4fc;
+}
+
+.viggo-ai-btn-primario {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s;
+  width: 100%;
+}
+
+.viggo-ai-btn-primario:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4f46e5, #3730a3);
+  transform: translateY(-1px);
+}
+
+.viggo-ai-btn-primario:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.viggo-ai-btn-loading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.viggo-ai-spinner {
+  width: 16px;
+  height: 16px;
+  animation: viggo-spin 1s linear infinite;
+}
+
+@keyframes viggo-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Resultado */
+.viggo-ai-resultado {
+  background: #f8f7ff;
+  border: 1.5px solid #e0e7ff;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.viggo-ai-resposta-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid #e0e7ff;
+  background: #f0ecff;
+}
+
+.viggo-ai-resposta-titulo {
+  font-weight: 600;
+  font-size: 12px;
+  color: #4f46e5;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.viggo-ai-btn-copiar {
+  background: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+
+.viggo-ai-btn-copiar:hover {
+  background: #3730a3;
+}
+
+.viggo-ai-resposta-texto {
+  padding: 14px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: #312e81;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Fontes */
+.viggo-ai-fontes {
+  border-top: 1px solid #e0e7ff;
+  padding: 10px 14px;
+}
+
+.viggo-ai-fontes-titulo {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.viggo-ai-fontes-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.viggo-ai-fonte-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #6b7280;
+  padding: 4px 0;
+}
+
+.viggo-ai-fonte-icone {
+  flex-shrink: 0;
+}
+
+/* Estado vazio */
+.viggo-ai-vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 16px;
+  gap: 12px;
+  flex: 1;
+}
+
+.viggo-ai-vazio-icone {
+  font-size: 40px;
+}
+
+.viggo-ai-vazio-texto {
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Erro */
+.viggo-ai-erro {
+  background: #fef2f2;
+  border: 1.5px solid #fecaca;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.viggo-ai-erro-icone {
+  font-size: 28px;
+}
+
+.viggo-ai-erro-texto {
+  font-size: 13px;
+  color: #dc2626;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.viggo-ai-btn-secundario {
+  background: transparent;
+  color: #6366f1;
+  border: 1.5px solid #e0e7ff;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.viggo-ai-btn-secundario:hover {
+  background: #f0ecff;
+  border-color: #6366f1;
+}
+
+/* Histórico */
+.viggo-ai-historico {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.viggo-ai-historico-titulo {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4f46e5;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.viggo-ai-historico-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.viggo-ai-historico-item {
+  background: #f8f7ff;
+  border: 1.5px solid #e0e7ff;
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.viggo-ai-historico-item:hover {
+  background: #f0ecff;
+  border-color: #a5b4fc;
+}
+
+.viggo-ai-historico-pergunta {
+  font-size: 12px;
+  color: #312e81;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.viggo-ai-historico-meta {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: 10px;
+  color: #9ca3af;
+}
+
+.viggo-ai-historico-vazio {
+  font-size: 13px;
+  color: #9ca3af;
+  padding: 8px;
+  text-align: center;
+}
+
+/* Footer */
+.viggo-ai-footer {
+  padding: 10px 16px;
+  border-top: 1px solid #f0ecff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fafafa;
+  flex-shrink: 0;
+}
+
+.viggo-ai-workspace-label {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.viggo-ai-workspace-select {
+  flex: 1;
+  border: 1.5px solid #e0e7ff;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 12px;
+  color: #312e81;
+  background: white;
+  outline: none;
+  cursor: pointer;
+}
+
+.viggo-ai-workspace-select:focus {
+  border-color: #6366f1;
+}
+
+.viggo-ai-btn-config {
+  font-size: 16px;
+  text-decoration: none;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+.viggo-ai-btn-config:hover {
+  opacity: 1;
+}

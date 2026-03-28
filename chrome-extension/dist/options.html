@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Viggo AI Support — Configurações</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 480px;
+      min-height: 400px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      color: #1e1b4b;
+      background: #f8f7ff;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      padding: 20px 24px;
+      color: white;
+    }
+
+    .header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header p {
+      font-size: 12px;
+      opacity: 0.8;
+      margin-top: 4px;
+    }
+
+    .corpo {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .secao {
+      background: white;
+      border: 1.5px solid #e0e7ff;
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .secao-titulo {
+      font-size: 13px;
+      font-weight: 700;
+      color: #4f46e5;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .campo {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .campo:last-child { margin-bottom: 0; }
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    input[type="text"],
+    input[type="url"],
+    input[type="password"],
+    select {
+      border: 1.5px solid #e0e7ff;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      color: #1e1b4b;
+      outline: none;
+      transition: border-color 0.15s;
+      width: 100%;
+      background: white;
+    }
+
+    input:focus, select:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .hint {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 2px;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .toggle-label {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .toggle-titulo {
+      font-size: 13px;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    .toggle-desc {
+      font-size: 11px;
+      color: #9ca3af;
+    }
+
+    .toggle {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .toggle input { opacity: 0; width: 0; height: 0; }
+
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: #d1d5db;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .toggle-slider::before {
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 3px;
+      top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.2s;
+    }
+
+    input:checked + .toggle-slider { background: #6366f1; }
+    input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+    .acoes {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-salvar {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: white;
+    }
+
+    .btn-salvar:hover { background: linear-gradient(135deg, #4f46e5, #3730a3); }
+
+    .btn-testar {
+      background: white;
+      color: #4f46e5;
+      border: 1.5px solid #e0e7ff;
+    }
+
+    .btn-testar:hover { background: #f0ecff; }
+
+    .mensagem {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      display: none;
+    }
+
+    .mensagem.sucesso {
+      background: #dcfce7;
+      color: #16a34a;
+      border: 1px solid #bbf7d0;
+    }
+
+    .mensagem.erro {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚙️ Viggo AI Support</h1>
+  <p>Configurações da extensão</p>
+</div>
+
+<div class="corpo">
+
+  <!-- Conexão -->
+  <div class="secao">
+    <div class="secao-titulo">🔌 Conexão com AnythingLLM</div>
+
+    <div class="campo">
+      <label for="apiUrl">URL do AnythingLLM</label>
+      <input type="url" id="apiUrl" placeholder="http://localhost:3001" />
+      <span class="hint">Endereço onde o AnythingLLM está rodando</span>
+    </div>
+
+    <div class="campo">
+      <label for="apiKey">API Key</label>
+      <input type="password" id="apiKey" placeholder="Sua API Key do AnythingLLM" />
+      <span class="hint">Encontre em: AnythingLLM → ⚙️ Configurações → API Keys</span>
+    </div>
+  </div>
+
+  <!-- Workspace padrão -->
+  <div class="secao">
+    <div class="secao-titulo">📂 Workspace Padrão</div>
+
+    <div class="campo">
+      <label for="workspace">Workspace padrão ao abrir o painel</label>
+      <input type="text" id="workspace" placeholder="suporte" />
+      <span class="hint">Nome exato do workspace no AnythingLLM (ex: suporte, produto, financeiro)</span>
+    </div>
+  </div>
+
+  <!-- Comportamento -->
+  <div class="secao">
+    <div class="secao-titulo">🎯 Comportamento</div>
+
+    <div class="toggle-row">
+      <div class="toggle-label">
+        <span class="toggle-titulo">Detecção automática de mensagens</span>
+        <span class="toggle-desc">Detecta novas mensagens no Movidesk e mostra alerta no botão</span>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="autoDetect" />
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Mensagem de status -->
+  <div id="mensagem" class="mensagem"></div>
+
+  <!-- Ações -->
+  <div class="acoes">
+    <button class="btn btn-testar" id="btn-testar">🔍 Testar conexão</button>
+    <button class="btn btn-salvar" id="btn-salvar">💾 Salvar</button>
+  </div>
+
+</div>
+
+<script src="options.js"></script>
+</body>
+</html>
