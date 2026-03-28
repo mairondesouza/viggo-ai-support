@@ -2,22 +2,25 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Viggo AI Support</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      width: 320px;
+      width: 380px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       font-size: 14px;
       color: #1e1b4b;
+      background: #fff;
     }
 
     .header {
       background: linear-gradient(135deg, #6366f1, #4f46e5);
-      padding: 16px;
+      padding: 12px 16px;
       color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
 
     .header-titulo {
@@ -25,70 +28,118 @@
       align-items: center;
       gap: 8px;
       font-weight: 700;
-      font-size: 16px;
-      margin-bottom: 4px;
+      font-size: 15px;
     }
 
-    .header-sub {
+    .header-acoes {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #fbbf24;
+    }
+    .status-dot.online { background: #4ade80; }
+    .status-dot.offline { background: #f87171; }
+
+    .btn-header {
+      background: rgba(255,255,255,0.15);
+      border: none;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+      padding: 4px 8px;
+      font-size: 13px;
+      transition: background 0.15s;
+    }
+    .btn-header:hover { background: rgba(255,255,255,0.25); }
+
+    .user-info {
       font-size: 11px;
       opacity: 0.8;
+      padding: 4px 16px;
+      background: #4f46e5;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .user-info .logout-btn {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.7);
+      cursor: pointer;
+      font-size: 10px;
+      text-decoration: underline;
+    }
+    .user-info .logout-btn:hover { color: white; }
+
+    /* ===== LOGIN ===== */
+    .login-container {
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
     }
 
-    .corpo {
-      padding: 16px;
+    .login-logo { font-size: 40px; }
+
+    .login-titulo {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1e1b4b;
+    }
+
+    .login-sub {
+      font-size: 12px;
+      color: #9ca3af;
+      text-align: center;
+    }
+
+    .login-form {
+      width: 100%;
       display: flex;
       flex-direction: column;
       gap: 12px;
     }
 
-    .status-card {
-      background: #f8f7ff;
-      border: 1.5px solid #e0e7ff;
-      border-radius: 10px;
-      padding: 12px;
-    }
-
-    .status-row {
+    .login-campo {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 13px;
-    }
-
-    .status-label {
-      color: #6b7280;
-      font-weight: 500;
-    }
-
-    .status-valor {
-      font-weight: 600;
-      color: #4f46e5;
-    }
-
-    .status-indicator {
-      display: inline-flex;
-      align-items: center;
+      flex-direction: column;
       gap: 4px;
+    }
+
+    .login-campo label {
       font-size: 12px;
+      font-weight: 600;
+      color: #374151;
     }
 
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #d1d5db;
-    }
-
-    .status-dot.online { background: #22c55e; }
-    .status-dot.offline { background: #ef4444; }
-    .status-dot.checking { background: #f59e0b; }
-
-    .btn {
-      width: 100%;
-      padding: 10px;
+    .login-campo input {
+      border: 1.5px solid #e0e7ff;
       border-radius: 8px;
-      border: none;
+      padding: 9px 12px;
       font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+      width: 100%;
+    }
+    .login-campo input:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .login-btn {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 14px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.15s;
@@ -97,91 +148,251 @@
       justify-content: center;
       gap: 6px;
     }
+    .login-btn:hover:not(:disabled) { opacity: 0.9; }
+    .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .btn-primario {
-      background: linear-gradient(135deg, #6366f1, #4f46e5);
-      color: white;
-    }
-
-    .btn-primario:hover { background: linear-gradient(135deg, #4f46e5, #3730a3); }
-
-    .btn-secundario {
-      background: white;
-      color: #4f46e5;
-      border: 1.5px solid #e0e7ff;
-    }
-
-    .btn-secundario:hover { background: #f0ecff; }
-
-    .btn-grupo {
-      display: flex;
-      gap: 8px;
-    }
-
-    .btn-grupo .btn { flex: 1; }
-
-    .divider {
-      height: 1px;
-      background: #f0ecff;
-    }
-
-    .footer {
-      padding: 10px 16px;
+    .login-erro {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: #dc2626;
       text-align: center;
-      font-size: 10px;
-      color: #9ca3af;
-      background: #fafafa;
+      display: none;
+    }
+
+    .login-server {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100%;
+      padding-top: 8px;
       border-top: 1px solid #f0ecff;
     }
+
+    .login-server label {
+      font-size: 11px;
+      color: #9ca3af;
+    }
+
+    .login-server input {
+      border: 1.5px solid #e0e7ff;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 11px;
+      outline: none;
+      color: #6b7280;
+    }
+
+    /* ===== CHAT ===== */
+    .mensagens {
+      height: 320px;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #f8f7ff;
+    }
+
+    .vazio {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 8px;
+      color: #9ca3af;
+      text-align: center;
+    }
+    .vazio-icone { font-size: 32px; }
+    .vazio-texto { font-size: 12px; line-height: 1.5; }
+
+    .msg {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      max-width: 90%;
+    }
+    .msg.usuario { align-self: flex-end; align-items: flex-end; }
+    .msg.assistente { align-self: flex-start; align-items: flex-start; }
+
+    .msg-balao {
+      padding: 9px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .msg.usuario .msg-balao {
+      background: #6366f1; color: white;
+      border-bottom-right-radius: 4px;
+    }
+    .msg.assistente .msg-balao {
+      background: white; color: #1e1b4b;
+      border: 1.5px solid #e0e7ff;
+      border-bottom-left-radius: 4px;
+    }
+
+    .msg-acoes { display: flex; gap: 4px; }
+
+    .btn-copiar {
+      background: #f0ecff; border: none; border-radius: 4px;
+      padding: 3px 8px; font-size: 11px; color: #4f46e5;
+      cursor: pointer; font-weight: 600; transition: background 0.15s;
+    }
+    .btn-copiar:hover { background: #e0e7ff; }
+
+    .msg-fontes { font-size: 10px; color: #9ca3af; padding-left: 2px; }
+
+    .loading {
+      align-self: flex-start; display: flex; gap: 4px;
+      align-items: center; padding: 10px 12px; background: white;
+      border: 1.5px solid #e0e7ff; border-radius: 12px;
+      border-bottom-left-radius: 4px;
+    }
+    .loading span {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #a5b4fc; animation: bounce 1.2s infinite;
+    }
+    .loading span:nth-child(2) { animation-delay: 0.2s; }
+    .loading span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-5px); }
+    }
+
+    .input-area {
+      padding: 10px 12px;
+      border-top: 1px solid #f0ecff;
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      background: white;
+    }
+
+    .workspace-select {
+      border: 1.5px solid #e0e7ff;
+      border-radius: 6px;
+      padding: 4px 6px;
+      font-size: 11px;
+      color: #4f46e5;
+      background: #f8f7ff;
+      outline: none;
+      cursor: pointer;
+      min-width: 80px;
+    }
+
+    textarea {
+      flex: 1;
+      border: 1.5px solid #e0e7ff;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-family: inherit;
+      font-size: 13px;
+      resize: none;
+      outline: none;
+      line-height: 1.5;
+      max-height: 80px;
+      transition: border-color 0.15s;
+    }
+    textarea:focus { border-color: #6366f1; }
+    textarea::placeholder { color: #c4b5fd; }
+
+    .btn-enviar {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: white; border: none; border-radius: 8px;
+      width: 36px; height: 36px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: all 0.15s;
+    }
+    .btn-enviar:hover:not(:disabled) { opacity: 0.9; }
+    .btn-enviar:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-enviar svg { width: 16px; height: 16px; }
+
+    .erro-banner {
+      background: #fef2f2; border-top: 1px solid #fecaca;
+      padding: 8px 12px; font-size: 12px; color: #dc2626;
+      text-align: center; display: none;
+    }
+
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
 
-<div class="header">
-  <div class="header-titulo">
-    🤖 Viggo AI Support
+<!-- ===== TELA DE LOGIN ===== -->
+<div id="tela-login">
+  <div class="header">
+    <div class="header-titulo">🤖 Viggo AI Support</div>
   </div>
-  <div class="header-sub">Base de conhecimento inteligente</div>
+  <div class="login-container">
+    <div class="login-logo">🔐</div>
+    <div class="login-titulo">Acesse sua conta</div>
+    <div class="login-sub">Entre com seu usuário do Viggo AI</div>
+
+    <div id="login-erro" class="login-erro"></div>
+
+    <div class="login-form">
+      <div class="login-campo">
+        <label>Usuário</label>
+        <input type="text" id="login-username" placeholder="seu.usuario" autocomplete="username" />
+      </div>
+      <div class="login-campo">
+        <label>Senha</label>
+        <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <button class="login-btn" id="login-btn">Entrar</button>
+
+      <div class="login-server">
+        <label>Servidor</label>
+        <input type="url" id="login-server-url" placeholder="http://10.0.0.6:3001" />
+      </div>
+    </div>
+  </div>
 </div>
 
-<div class="corpo">
-
-  <!-- Status da conexão -->
-  <div class="status-card">
-    <div class="status-row">
-      <span class="status-label">AnythingLLM</span>
-      <span class="status-indicator">
-        <span class="status-dot checking" id="status-dot"></span>
-        <span id="status-texto">Verificando...</span>
-      </span>
-    </div>
-    <div class="status-row" style="margin-top: 6px">
-      <span class="status-label">Workspace ativo</span>
-      <span class="status-valor" id="workspace-ativo">suporte</span>
+<!-- ===== TELA DE CHAT ===== -->
+<div id="tela-chat" class="hidden">
+  <div class="header">
+    <div class="header-titulo">🤖 Viggo AI</div>
+    <div class="header-acoes">
+      <span class="status-dot online" id="status-dot"></span>
+      <button class="btn-header" id="btn-expandir" title="Expandir na página">⛶</button>
+      <button class="btn-header" id="btn-config" title="Configurações">⚙️</button>
     </div>
   </div>
 
-  <!-- Ações principais -->
-  <div class="btn-grupo">
-    <button class="btn btn-primario" id="btn-abrir-painel">
-      📋 Abrir painel
-    </button>
-    <button class="btn btn-secundario" id="btn-abrir-anythingllm">
-      🌐 Abrir AI
-    </button>
+  <div class="user-info" id="user-info">
+    <span id="user-nome">Agente</span>
+    <button class="logout-btn" id="btn-logout">Sair</button>
   </div>
 
-  <div class="divider"></div>
+  <div class="mensagens" id="mensagens">
+    <div class="vazio" id="vazio">
+      <div class="vazio-icone">💬</div>
+      <div class="vazio-texto">
+        Digite a dúvida do cliente abaixo<br>e receba a resposta da base de conhecimento
+      </div>
+    </div>
+  </div>
 
-  <!-- Configurações rápidas -->
-  <button class="btn btn-secundario" id="btn-configuracoes">
-    ⚙️ Configurações
-  </button>
+  <div id="erro-banner" class="erro-banner"></div>
 
-</div>
-
-<div class="footer">
-  Viggo AI Support v1.0.0
+  <div class="input-area">
+    <select id="workspace-select" class="workspace-select">
+      <option value="">Carregando...</option>
+    </select>
+    <textarea id="input-pergunta" placeholder="Digite a dúvida..." rows="1"></textarea>
+    <button class="btn-enviar" id="btn-enviar" title="Enviar (Enter)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"></line>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+      </svg>
+    </button>
+  </div>
 </div>
 
 <script src="popup.js"></script>

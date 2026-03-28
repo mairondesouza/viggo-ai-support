@@ -16,22 +16,20 @@
     },
     "default_title": "Viggo AI Support"
   },
-  "background": {
-    "service_worker": "background.js",
-    "type": "module"
-  },
+  "options_page": "options.html",
   "content_scripts": [
     {
-      "matches": [
-        "https://*.movidesk.com/*",
-        "http://localhost/*",
-        "https://localhost/*"
-      ],
+      "matches": ["<all_urls>"],
       "js": ["content.js"],
       "css": ["sidebar.css"],
       "run_at": "document_idle"
     }
   ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+
   "permissions": [
     "storage",
     "contextMenus",
@@ -39,9 +37,7 @@
     "scripting"
   ],
   "host_permissions": [
-    "https://*.movidesk.com/*",
-    "http://localhost:3001/*",
-    "https://*/"
+    "<all_urls>"
   ],
   "web_accessible_resources": [
     {

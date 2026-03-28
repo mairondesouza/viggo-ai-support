@@ -1,520 +1,272 @@
 // ============================================================
 // Content Script — Viggo AI Support
-// Injeta o painel lateral na página do Movidesk
+// Painel lateral expansível (usa sessão do login)
 // ============================================================
 
 (function () {
   "use strict";
+  if (window.__viggoAiInjected) return;
+  window.__viggoAiInjected = true;
 
-  // Evita injeção dupla
-  if (window.__viggioAiInjected) return;
-  window.__viggioAiInjected = true;
-
-  // ----------------------------------------------------------------
-  // Estado
-  // ----------------------------------------------------------------
-  let config = {
-    apiUrl: "http://localhost:3001",
-    apiKey: "",
-    workspace: "suporte",
-    autoDetect: false,
-  };
+  let session = {};
+  let enviando = false;
   let painelAberto = false;
-  let ultimaPergunta = "";
-  let observadorMensagens = null;
+
+  // Carrega sessão do storage (via background)
+  function carregarSessao() {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ type: "GET_SESSION" }, (resp) => {
+        session = resp?.session || {};
+        resolve();
+      });
+    });
+  }
 
   // ----------------------------------------------------------------
-  // Carrega configurações
-  // ----------------------------------------------------------------
-  chrome.runtime.sendMessage({ type: "GET_CONFIG" }, (resp) => {
-    if (resp?.config) {
-      config = resp.config;
-      if (config.autoDetect) {
-        iniciarObservadorMensagens();
-      }
-    }
-  });
-
-  // ----------------------------------------------------------------
-  // Cria elementos do DOM
+  // Cria o painel lateral
   // ----------------------------------------------------------------
   function criarPainel() {
     if (document.getElementById("viggo-ai-painel")) return;
 
-    // Container principal
     const painel = document.createElement("div");
     painel.id = "viggo-ai-painel";
     painel.className = "viggo-ai-painel viggo-ai-fechado";
 
     painel.innerHTML = `
       <div class="viggo-ai-header">
-        <div class="viggo-ai-header-titulo">
-          <span class="viggo-ai-logo">🤖</span>
-          <span>Viggo AI</span>
-          <span class="viggo-ai-badge">Base de Conhecimento</span>
-        </div>
-        <div class="viggo-ai-header-acoes">
-          <button id="viggo-ai-btn-historico" title="Histórico" class="viggo-ai-btn-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 3h18v18H3z"/><path d="M3 9h18M9 21V9"/>
-            </svg>
-          </button>
-          <button id="viggo-ai-btn-fechar" title="Fechar" class="viggo-ai-btn-icon viggo-ai-btn-fechar">✕</button>
-        </div>
+        <div class="viggo-ai-header-titulo"><span>🤖</span><span>Viggo AI Support</span></div>
+        <button id="viggo-ai-btn-fechar" class="viggo-ai-btn-icon" title="Fechar">✕</button>
       </div>
-
-      <div class="viggo-ai-corpo">
-        <!-- Campo de busca -->
-        <div class="viggo-ai-busca">
-          <textarea
-            id="viggo-ai-input"
-            placeholder="Cole ou digite a dúvida do cliente aqui..."
-            rows="3"
-          ></textarea>
-          <button id="viggo-ai-btn-enviar" class="viggo-ai-btn-primario">
-            <span class="viggo-ai-btn-texto">Consultar</span>
-            <span class="viggo-ai-btn-loading" style="display:none">
-              <svg class="viggo-ai-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-              </svg>
-              Consultando...
-            </span>
-          </button>
-        </div>
-
-        <!-- Área de resposta -->
-        <div id="viggo-ai-resultado" class="viggo-ai-resultado" style="display:none">
-          <div class="viggo-ai-resposta-header">
-            <span class="viggo-ai-resposta-titulo">💬 Resposta sugerida</span>
-            <button id="viggo-ai-btn-copiar" class="viggo-ai-btn-copiar" title="Copiar resposta">
-              📋 Copiar
-            </button>
-          </div>
-          <div id="viggo-ai-resposta-texto" class="viggo-ai-resposta-texto"></div>
-
-          <!-- Fontes -->
-          <div id="viggo-ai-fontes" class="viggo-ai-fontes" style="display:none">
-            <div class="viggo-ai-fontes-titulo">📚 Fontes consultadas:</div>
-            <ul id="viggo-ai-fontes-lista" class="viggo-ai-fontes-lista"></ul>
-          </div>
-        </div>
-
-        <!-- Histórico -->
-        <div id="viggo-ai-historico" class="viggo-ai-historico" style="display:none">
-          <div class="viggo-ai-historico-titulo">🕒 Últimas consultas</div>
-          <ul id="viggo-ai-historico-lista" class="viggo-ai-historico-lista"></ul>
-          <button id="viggo-ai-btn-limpar-historico" class="viggo-ai-btn-secundario">
-            Limpar histórico
-          </button>
-        </div>
-
-        <!-- Estado vazio -->
+      <div class="viggo-ai-user-info" id="viggo-ai-user-info"></div>
+      <div id="viggo-ai-mensagens" class="viggo-ai-mensagens">
         <div id="viggo-ai-vazio" class="viggo-ai-vazio">
-          <div class="viggo-ai-vazio-icone">🔍</div>
-          <p class="viggo-ai-vazio-texto">
-            Selecione o texto da mensagem do cliente e clique com o botão direito,<br>
-            ou cole a pergunta acima e clique em <strong>Consultar</strong>.
-          </p>
-        </div>
-
-        <!-- Erro -->
-        <div id="viggo-ai-erro" class="viggo-ai-erro" style="display:none">
-          <div class="viggo-ai-erro-icone">⚠️</div>
-          <p id="viggo-ai-erro-texto" class="viggo-ai-erro-texto"></p>
-          <button id="viggo-ai-btn-tentar-novamente" class="viggo-ai-btn-secundario">
-            Tentar novamente
-          </button>
+          <div class="viggo-ai-vazio-icone">💬</div>
+          <p>Digite a dúvida do cliente abaixo</p>
         </div>
       </div>
-
-      <!-- Seletor de workspace -->
-      <div class="viggo-ai-footer">
-        <label class="viggo-ai-workspace-label">Base:</label>
-        <select id="viggo-ai-workspace-select" class="viggo-ai-workspace-select">
-          <option value="suporte">Suporte</option>
-          <option value="produto">Produto</option>
-          <option value="financeiro">Financeiro</option>
-          <option value="geral">Geral</option>
+      <div id="viggo-ai-erro-banner" class="viggo-ai-erro-banner" style="display:none"></div>
+      <div class="viggo-ai-input-area">
+        <select id="viggo-ai-workspace" class="viggo-ai-workspace-select">
+          <option value="">Carregando...</option>
         </select>
-        <a href="#" id="viggo-ai-btn-config" class="viggo-ai-btn-config" title="Configurações">⚙️</a>
+        <textarea id="viggo-ai-input" class="viggo-ai-textarea" placeholder="Digite a dúvida..." rows="1"></textarea>
+        <button id="viggo-ai-btn-enviar" class="viggo-ai-btn-enviar" title="Enviar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
       </div>
     `;
 
     document.body.appendChild(painel);
-    configurarEventos(painel);
 
-    // Carrega workspace salvo
-    chrome.storage.sync.get({ workspace: "suporte" }, (data) => {
-      const sel = document.getElementById("viggo-ai-workspace-select");
-      if (sel) sel.value = data.workspace;
+    // Eventos
+    document.getElementById("viggo-ai-btn-fechar").addEventListener("click", fecharPainel);
+    document.getElementById("viggo-ai-btn-enviar").addEventListener("click", enviar);
+    document.getElementById("viggo-ai-input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); enviar(); }
     });
+    document.getElementById("viggo-ai-input").addEventListener("input", (e) => {
+      e.target.style.height = "auto";
+      e.target.style.height = Math.min(e.target.scrollHeight, 80) + "px";
+    });
+
+    // Mostra nome do usuário
+    const userInfo = document.getElementById("viggo-ai-user-info");
+    if (userInfo && session.username) {
+      userInfo.textContent = `👤 ${session.username}`;
+      userInfo.style.cssText = "font-size:11px;color:#a5b4fc;padding:4px 16px;background:#4f46e5;";
+    }
+
+    carregarWorkspaces();
   }
 
   // ----------------------------------------------------------------
-  // Botão flutuante (sempre visível)
+  // Workspaces dinâmicos
   // ----------------------------------------------------------------
-  function criarBotaoFlutuante() {
-    if (document.getElementById("viggo-ai-fab")) return;
-
-    const fab = document.createElement("button");
-    fab.id = "viggo-ai-fab";
-    fab.className = "viggo-ai-fab";
-    fab.title = "Viggo AI Support";
-    fab.innerHTML = `
-      <span class="viggo-ai-fab-icone">🤖</span>
-      <span class="viggo-ai-fab-badge" id="viggo-ai-fab-badge" style="display:none">!</span>
-    `;
-
-    fab.addEventListener("click", () => togglePainel());
-    document.body.appendChild(fab);
-  }
-
-  // ----------------------------------------------------------------
-  // Eventos do painel
-  // ----------------------------------------------------------------
-  function configurarEventos(painel) {
-    // Fechar
-    document.getElementById("viggo-ai-btn-fechar")?.addEventListener("click", () => {
-      fecharPainel();
-    });
-
-    // Consultar
-    document.getElementById("viggo-ai-btn-enviar")?.addEventListener("click", () => {
-      const input = document.getElementById("viggo-ai-input");
-      const pergunta = input?.value?.trim();
-      if (pergunta) consultar(pergunta);
-    });
-
-    // Enter no textarea (Ctrl+Enter para enviar)
-    document.getElementById("viggo-ai-input")?.addEventListener("keydown", (e) => {
-      if (e.ctrlKey && e.key === "Enter") {
-        const pergunta = e.target.value.trim();
-        if (pergunta) consultar(pergunta);
-      }
-    });
-
-    // Copiar resposta
-    document.getElementById("viggo-ai-btn-copiar")?.addEventListener("click", () => {
-      const texto = document.getElementById("viggo-ai-resposta-texto")?.innerText;
-      if (texto) {
-        navigator.clipboard.writeText(texto).then(() => {
-          const btn = document.getElementById("viggo-ai-btn-copiar");
-          btn.textContent = "✅ Copiado!";
-          setTimeout(() => (btn.textContent = "📋 Copiar"), 2000);
-        });
-      }
-    });
-
-    // Histórico
-    document.getElementById("viggo-ai-btn-historico")?.addEventListener("click", () => {
-      toggleHistorico();
-    });
-
-    // Limpar histórico
-    document.getElementById("viggo-ai-btn-limpar-historico")?.addEventListener("click", () => {
-      chrome.storage.local.set({ history: [] }, () => {
-        renderizarHistorico([]);
-      });
-    });
-
-    // Tentar novamente
-    document.getElementById("viggo-ai-btn-tentar-novamente")?.addEventListener("click", () => {
-      if (ultimaPergunta) consultar(ultimaPergunta);
-    });
-
-    // Salvar workspace selecionado
-    document.getElementById("viggo-ai-workspace-select")?.addEventListener("change", (e) => {
-      chrome.storage.sync.set({ workspace: e.target.value });
-    });
-
-    // Config
-    document.getElementById("viggo-ai-btn-config")?.addEventListener("click", (e) => {
-      e.preventDefault();
-      chrome.runtime.openOptionsPage?.() || window.open(chrome.runtime.getURL("options.html"));
-    });
-  }
-
-  // ----------------------------------------------------------------
-  // Lógica de consulta à API do AnythingLLM
-  // ----------------------------------------------------------------
-  async function consultar(pergunta) {
-    ultimaPergunta = pergunta;
-
-    // Atualiza UI para estado "carregando"
-    mostrarCarregando(true);
-    esconderTudo();
-
-    // Pega workspace do select
-    const workspace =
-      document.getElementById("viggo-ai-workspace-select")?.value ||
-      config.workspace;
+  async function carregarWorkspaces() {
+    const sel = document.getElementById("viggo-ai-workspace");
+    if (!sel || !session.token) return;
 
     try {
-      const resp = await fetch(
-        `${config.apiUrl}/api/v1/workspace/${workspace}/chat`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${config.apiKey}`,
-          },
-          body: JSON.stringify({
-            message: pergunta,
-            mode: "query",
-          }),
-        }
-      );
-
-      if (!resp.ok) {
-        const erro = await resp.json().catch(() => ({}));
-        throw new Error(
-          erro?.message || `Erro ${resp.status}: ${resp.statusText}`
-        );
-      }
-
+      const resp = await fetch(`${session.apiUrl}/api/v1/workspaces`, {
+        headers: { Authorization: `Bearer ${session.token}` },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!resp.ok) throw new Error();
       const data = await resp.json();
-      const resposta = data.textResponse || data.response || "Sem resposta.";
-      const fontes = data.sources || [];
+      const workspaces = data.workspaces || [];
 
-      mostrarResposta(resposta, fontes);
-
-      // Salva no histórico
-      chrome.runtime.sendMessage({
-        type: "SAVE_HISTORY",
-        item: {
-          pergunta,
-          resposta,
-          workspace,
-          timestamp: new Date().toISOString(),
-        },
-      });
-    } catch (err) {
-      mostrarErro(err.message || "Não foi possível conectar ao Viggo AI.");
-    } finally {
-      mostrarCarregando(false);
-    }
-  }
-
-  // ----------------------------------------------------------------
-  // Funções de UI
-  // ----------------------------------------------------------------
-  function mostrarCarregando(ativo) {
-    const btnTexto = document.querySelector(".viggo-ai-btn-texto");
-    const btnLoading = document.querySelector(".viggo-ai-btn-loading");
-    const btnEnviar = document.getElementById("viggo-ai-btn-enviar");
-    if (btnTexto) btnTexto.style.display = ativo ? "none" : "inline";
-    if (btnLoading) btnLoading.style.display = ativo ? "flex" : "none";
-    if (btnEnviar) btnEnviar.disabled = ativo;
-  }
-
-  function esconderTudo() {
-    ["viggo-ai-resultado", "viggo-ai-erro", "viggo-ai-vazio", "viggo-ai-historico"].forEach(
-      (id) => {
-        const el = document.getElementById(id);
-        if (el) el.style.display = "none";
+      sel.innerHTML = "";
+      if (workspaces.length === 0) {
+        sel.innerHTML = '<option value="">Nenhum workspace</option>';
+        return;
       }
-    );
-  }
-
-  function mostrarResposta(texto, fontes) {
-    const resultado = document.getElementById("viggo-ai-resultado");
-    const respostaEl = document.getElementById("viggo-ai-resposta-texto");
-    const fontesEl = document.getElementById("viggo-ai-fontes");
-    const fontesLista = document.getElementById("viggo-ai-fontes-lista");
-
-    if (resultado) resultado.style.display = "block";
-    if (respostaEl) respostaEl.textContent = texto;
-
-    if (fontes.length > 0 && fontesEl && fontesLista) {
-      fontesLista.innerHTML = fontes
-        .map(
-          (f) =>
-            `<li class="viggo-ai-fonte-item">
-              <span class="viggo-ai-fonte-icone">📄</span>
-              <span>${f.title || f.name || "Documento"}</span>
-            </li>`
-        )
-        .join("");
-      fontesEl.style.display = "block";
-    }
-  }
-
-  function mostrarErro(mensagem) {
-    const erroEl = document.getElementById("viggo-ai-erro");
-    const erroTexto = document.getElementById("viggo-ai-erro-texto");
-    if (erroEl) erroEl.style.display = "block";
-    if (erroTexto) erroTexto.textContent = mensagem;
-  }
-
-  function toggleHistorico() {
-    const historicoEl = document.getElementById("viggo-ai-historico");
-    const resultadoEl = document.getElementById("viggo-ai-resultado");
-    const vazioEl = document.getElementById("viggo-ai-vazio");
-
-    if (historicoEl?.style.display === "none" || !historicoEl?.style.display) {
-      esconderTudo();
-      if (historicoEl) historicoEl.style.display = "block";
-      chrome.storage.local.get({ history: [] }, (data) => {
-        renderizarHistorico(data.history);
+      workspaces.forEach((ws) => {
+        const opt = document.createElement("option");
+        opt.value = ws.slug;
+        opt.textContent = ws.name;
+        if (ws.slug === session.workspace) opt.selected = true;
+        sel.appendChild(opt);
       });
-    } else {
-      if (historicoEl) historicoEl.style.display = "none";
-      if (vazioEl) vazioEl.style.display = "flex";
+      if (!sel.value) sel.value = workspaces[0].slug;
+    } catch {
+      sel.innerHTML = '<option value="">Erro ao carregar</option>';
     }
   }
 
-  function renderizarHistorico(history) {
-    const lista = document.getElementById("viggo-ai-historico-lista");
-    if (!lista) return;
+  // ----------------------------------------------------------------
+  // Envio
+  // ----------------------------------------------------------------
+  async function enviar() {
+    const input = document.getElementById("viggo-ai-input");
+    const pergunta = input?.value?.trim();
+    if (!pergunta || enviando) return;
 
-    if (history.length === 0) {
-      lista.innerHTML = '<li class="viggo-ai-historico-vazio">Nenhuma consulta ainda.</li>';
+    enviando = true;
+    document.getElementById("viggo-ai-vazio")?.remove();
+    adicionarMensagem("usuario", pergunta);
+    input.value = "";
+    input.style.height = "auto";
+    mostrarLoading();
+    document.getElementById("viggo-ai-btn-enviar").disabled = true;
+
+    const workspace = document.getElementById("viggo-ai-workspace")?.value;
+
+    if (!session.token) {
+      removerLoading();
+      mostrarErro("Faça login no plugin primeiro (clique no ícone 🤖 na barra).");
+      enviando = false;
+      document.getElementById("viggo-ai-btn-enviar").disabled = false;
       return;
     }
 
-    lista.innerHTML = history
-      .map(
-        (item) => `
-        <li class="viggo-ai-historico-item" data-pergunta="${encodeURIComponent(item.pergunta)}">
-          <div class="viggo-ai-historico-pergunta">${item.pergunta.slice(0, 80)}${item.pergunta.length > 80 ? "..." : ""}</div>
-          <div class="viggo-ai-historico-meta">
-            <span>${item.workspace}</span>
-            <span>${new Date(item.timestamp).toLocaleTimeString("pt-BR")}</span>
-          </div>
-        </li>`
-      )
-      .join("");
-
-    // Clicar no histórico preenche o input
-    lista.querySelectorAll(".viggo-ai-historico-item").forEach((item) => {
-      item.addEventListener("click", () => {
-        const pergunta = decodeURIComponent(item.dataset.pergunta);
-        const input = document.getElementById("viggo-ai-input");
-        if (input) {
-          input.value = pergunta;
-          esconderTudo();
-          document.getElementById("viggo-ai-vazio").style.display = "flex";
-        }
+    try {
+      const resp = await fetch(`${session.apiUrl}/api/v1/workspace/${workspace}/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.token}`,
+        },
+        body: JSON.stringify({ message: pergunta, mode: "query" }),
+        signal: AbortSignal.timeout(30000),
       });
-    });
+      removerLoading();
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err?.error || `Erro ${resp.status}`);
+      }
+
+      const data = await resp.json();
+      adicionarMensagem("assistente", data.textResponse || "Sem resposta.", data.sources || []);
+    } catch (err) {
+      removerLoading();
+      mostrarErro(err.message || "Erro ao consultar.");
+    } finally {
+      enviando = false;
+      document.getElementById("viggo-ai-btn-enviar").disabled = false;
+      document.getElementById("viggo-ai-input")?.focus();
+    }
   }
 
   // ----------------------------------------------------------------
-  // Controle do painel
+  // UI
   // ----------------------------------------------------------------
-  function abrirPainel() {
+  function adicionarMensagem(tipo, texto, fontes = []) {
+    const container = document.getElementById("viggo-ai-mensagens");
+    if (!container) return;
+    const div = document.createElement("div");
+    div.className = `viggo-ai-msg viggo-ai-msg-${tipo}`;
+    const balao = document.createElement("div");
+    balao.className = "viggo-ai-balao";
+    balao.textContent = texto;
+    div.appendChild(balao);
+    if (tipo === "assistente") {
+      const acoes = document.createElement("div");
+      acoes.className = "viggo-ai-acoes";
+      const btn = document.createElement("button");
+      btn.className = "viggo-ai-btn-copiar";
+      btn.textContent = "📋 Copiar";
+      btn.addEventListener("click", () => {
+        navigator.clipboard.writeText(texto).then(() => {
+          btn.textContent = "✅ Copiado!";
+          setTimeout(() => (btn.textContent = "📋 Copiar"), 2000);
+        });
+      });
+      acoes.appendChild(btn);
+      div.appendChild(acoes);
+      if (fontes.length > 0) {
+        const f = document.createElement("div");
+        f.className = "viggo-ai-fontes";
+        f.textContent = "📄 " + fontes.map(s => s.title || s.name || "Doc").join(", ");
+        div.appendChild(f);
+      }
+    }
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function mostrarLoading() {
+    const c = document.getElementById("viggo-ai-mensagens");
+    if (!c) return;
+    const el = document.createElement("div");
+    el.className = "viggo-ai-loading"; el.id = "viggo-ai-loading";
+    el.innerHTML = "<span></span><span></span><span></span>";
+    c.appendChild(el); c.scrollTop = c.scrollHeight;
+  }
+  function removerLoading() { document.getElementById("viggo-ai-loading")?.remove(); }
+  function mostrarErro(msg) {
+    const el = document.getElementById("viggo-ai-erro-banner");
+    if (!el) return;
+    el.textContent = "⚠️ " + msg; el.style.display = "block";
+    setTimeout(() => (el.style.display = "none"), 6000);
+  }
+
+  // ----------------------------------------------------------------
+  // Painel abrir / fechar
+  // ----------------------------------------------------------------
+  async function abrirPainel(pergunta) {
+    await carregarSessao();
+    if (!session.token) {
+      alert("Viggo AI: Faça login primeiro. Clique no ícone 🤖 na barra do Chrome.");
+      return;
+    }
     criarPainel();
     const painel = document.getElementById("viggo-ai-painel");
-    if (painel) {
-      painel.classList.remove("viggo-ai-fechado");
-      painel.classList.add("viggo-ai-aberto");
-    }
+    painel?.classList.remove("viggo-ai-fechado");
+    painel?.classList.add("viggo-ai-aberto");
     painelAberto = true;
-    atualizarFab(true);
+    if (pergunta) {
+      setTimeout(() => {
+        const input = document.getElementById("viggo-ai-input");
+        if (input) input.value = pergunta;
+        enviar();
+      }, 250);
+    } else {
+      setTimeout(() => document.getElementById("viggo-ai-input")?.focus(), 200);
+    }
   }
 
   function fecharPainel() {
     const painel = document.getElementById("viggo-ai-painel");
-    if (painel) {
-      painel.classList.add("viggo-ai-fechado");
-      painel.classList.remove("viggo-ai-aberto");
-    }
+    painel?.classList.add("viggo-ai-fechado");
+    painel?.classList.remove("viggo-ai-aberto");
     painelAberto = false;
-    atualizarFab(false);
   }
 
-  function togglePainel() {
-    if (painelAberto) {
-      fecharPainel();
-    } else {
-      abrirPainel();
+  // ----------------------------------------------------------------
+  // Listener
+  // ----------------------------------------------------------------
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === "CONSULTAR") {
+      abrirPainel(message.pergunta);
+      sendResponse({ ok: true });
     }
-  }
-
-  function atualizarFab(aberto) {
-    const fab = document.getElementById("viggo-ai-fab");
-    if (fab) {
-      fab.classList.toggle("viggo-ai-fab-ativo", aberto);
-    }
-  }
-
-  // ----------------------------------------------------------------
-  // Auto-detecção de mensagens do cliente (Movidesk)
-  // ----------------------------------------------------------------
-  function iniciarObservadorMensagens() {
-    if (observadorMensagens) return;
-
-    observadorMensagens = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        for (const node of mutation.addedNodes) {
-          if (node.nodeType !== 1) continue;
-
-          // Tenta detectar mensagens do cliente no Movidesk
-          // O Movidesk usa classes específicas para mensagens recebidas
-          const seletoresMensagem = [
-            ".message-received .message-text",
-            ".chat-message.received .text",
-            "[class*='incoming'] [class*='message']",
-            ".ticket-msg-client",
-          ];
-
-          for (const seletor of seletoresMensagem) {
-            const el = node.matches?.(seletor)
-              ? node
-              : node.querySelector?.(seletor);
-            if (el && el.textContent.trim().length > 10) {
-              notificarNovaMensagem(el.textContent.trim());
-              return;
-            }
-          }
-        }
-      }
-    });
-
-    observadorMensagens.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-  }
-
-  function notificarNovaMensagem(texto) {
-    // Mostra badge no FAB indicando nova mensagem
-    const badge = document.getElementById("viggo-ai-fab-badge");
-    if (badge) badge.style.display = "block";
-
-    // Se o painel estiver aberto, preenche automaticamente
-    if (painelAberto) {
-      const input = document.getElementById("viggo-ai-input");
-      if (input && !input.value) {
-        input.value = texto;
-      }
-    }
-  }
-
-  // ----------------------------------------------------------------
-  // Eventos do background script
-  // ----------------------------------------------------------------
-  window.addEventListener("viggo-ai:consultar", (e) => {
-    const pergunta = e.detail?.pergunta;
-    if (pergunta) {
-      abrirPainel();
-      // Pequeno delay pra garantir que o painel está no DOM
-      setTimeout(() => {
-        const input = document.getElementById("viggo-ai-input");
-        if (input) input.value = pergunta;
-        consultar(pergunta);
-      }, 150);
+    if (message.type === "TOGGLE") {
+      painelAberto ? fecharPainel() : abrirPainel();
+      sendResponse({ ok: true });
     }
   });
-
-  window.addEventListener("viggo-ai:toggle", () => {
-    togglePainel();
-  });
-
-  // ----------------------------------------------------------------
-  // Inicializa
-  // ----------------------------------------------------------------
-  criarBotaoFlutuante();
-
-  console.log("[Viggo AI] Painel pronto. Clique no botão 🤖 ou selecione texto e clique com botão direito.");
 })();
